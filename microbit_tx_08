@@ -1,0 +1,133 @@
+# micro:bit CW Transceiver
+# A button: QRO Pwr0(Min) - 7(Max)
+# Shake gesture: Switch keying device - "B":B button, "K":Straight key
+# If you use straight key, use the pin 3V and 1
+
+from microbit import *
+import radio
+import music
+
+radio.on()
+
+pin0.set_analog_period(1)
+
+RxFlag = False
+TxFlag = False
+Po = 0
+msg = ''
+rssi = 0
+timestamp = ''
+mdelay = 0
+wdtimer = 0
+# bボタン打鍵有効(shakeで切り替え)
+bbtnFlag = True
+
+# music.play(music.POWER_UP)
+
+def BtnKeyChg():
+    global bbtnFlag
+    if bbtnFlag:
+        bbtnFlag = False
+        display.show('K')
+        sleep(500)
+        display.clear()
+    else:
+        bbtnFlag = True
+        display.show('B')
+        sleep(500)
+        display.clear()
+
+def QRO():
+    global Po
+    Po = Po + 1
+    if Po > 7:
+        Po = 0
+    radio.config(power=Po)
+    display.show(Po)
+    sleep(500)
+    display.clear()
+
+def Meter(RxLevel):
+    RxLevel = RxLevel - 130
+    RxLevel = RxLevel // 2
+    if RxLevel > 45:
+        RxLevel = 45
+    elif RxLevel < 0:
+        RxLevel = 0
+    for i in [0, 1, 2, 3, 4]:
+        if RxLevel >= 9:
+            display.set_pixel(i, 0, 9)
+            RxLevel = RxLevel - 9
+            if RxLevel < 0:
+                RxLevel = 0
+        else:
+            display.set_pixel(i, 0, RxLevel)
+            RxLevel = 0
+
+while True:
+    Rx = radio.receive_full()
+    if Rx:
+        msg, rssi, timestamp = Rx
+        if str(msg[3:], 'utf8') == 'key_down' and not RxFlag:
+            wdtimer = running_time()
+            RxFlag = True
+        elif str(msg[3:], 'utf8') == 'key_up' and RxFlag:
+            RxFlag = False
+
+    if RxFlag and running_time() > (wdtimer + 3000):  # key_down未検出chk
+        RxFlag = False
+        # wdtimer = running_time()
+
+    if RxFlag:
+        Meter(255 + rssi)  # 受信強度は-255(弱)から0(強)
+        mdelay = 255 + rssi
+    else:
+        mdelay = mdelay - 5
+        if mdelay < 0:
+            mdelay = 0
+        Meter(mdelay)
+
+    if bbtnFlag:
+        if button_b.is_pressed() and not TxFlag:  # 立ち上がり
+            TxFlag = True
+            radio.send('key_down')
+            music.pitch(698, -1, pin0, False)
+            display.set_pixel(2, 2, 9)
+
+        elif not button_b.is_pressed() and TxFlag:  # 立ち下がり
+            TxFlag = False
+            radio.send('key_up')
+            music.stop()
+            display.set_pixel(2, 2, 0)
+
+        elif not button_b.is_pressed() and not TxFlag and not RxFlag:  # 離したまま受信なし
+            music.stop()
+        elif not button_b.is_pressed() and not TxFlag and RxFlag:  # 離したまま受信あり
+            music.pitch(880, -1, pin0, False)
+
+    else:
+        if pin1.read_digital() and not TxFlag:  # 立ち上がり
+            TxFlag = True
+            radio.send('key_down')
+            music.pitch(698, -1, pin0, False)
+            display.set_pixel(2, 2, 9)
+
+        elif not pin1.read_digital() and TxFlag:  # 立ち下がり
+            TxFlag = False
+            radio.send('key_up')
+            music.stop()
+            display.set_pixel(2, 2, 0)
+
+        elif not pin1.read_digital() and not TxFlag and not RxFlag:  # 離したまま受信なし
+            music.stop()
+        elif not pin1.read_digital() and not TxFlag and RxFlag:  # 離したまま受信あり
+            music.pitch(880, -1, pin0, False)
+
+    if button_a.is_pressed():
+        QRO()
+
+    if accelerometer.was_gesture("shake"):
+        BtnKeyChg()
+
+    sleep(10)
+    
