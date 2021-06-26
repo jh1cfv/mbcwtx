@@ -7,7 +7,8 @@ https://amzn.to/2J552JL
 Wrist watch style: https://www.switch-science.com/catalog/5272/
 
 Usage
-A button: QRO Pwr0(Min) - 7(Max)
+A button: Sound ON/OFF
+A+B button: QRO Pwr0(Min) - 7(Max)
 Shake gesture: Switch keying device - "B":B button, "K":Straight key
 If you use straight key, use the pin 3V and 1
 
@@ -23,7 +24,8 @@ https://www.youtube.com/watch?v=e6W0MP1_1Po
 
 Description in Japnanese
 micro:bitのCWトランシーバーです。
-Aボタンで送信出力を変えられます。0が最小(交信距離：数センチ)、7が最大(見通しで30mくらい)
+AボタンでサウンドON/OFFです。
+A+Bボタンで送信出力を変えられます。0が最小(交信距離：数センチ)、7が最大(見通しで30mくらい)
 キーイングはBボタンか、ストレートキー(縦振れ電鍵)を切り替えられます。
 本体を軽く振ると切り替わります。[B]Bボタン、[K]ストレートキー。(同時には使えません)
 ストレートキーを使う時は、ワニ口クリップ等で3Vとpin1に接続してください。
