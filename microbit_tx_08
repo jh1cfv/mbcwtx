@@ -1,5 +1,6 @@
 # micro:bit CW Transceiver
-# A button: QRO Pwr0(Min) - 7(Max)
+# A button: Sound On/OFF
+# A+B button: QRO Pwr0(Min) - 7(Max)
 # Shake gesture: Switch keying device - "B":B button, "K":Straight key
 # If you use straight key, use the pin 3V and 1
 
@@ -8,6 +9,7 @@ import radio
 import music
 
 radio.on()
+radio.config(power=7)
 
 pin0.set_analog_period(1)
 
@@ -21,8 +23,8 @@ mdelay = 0
 wdtimer = 0
 # bボタン打鍵有効(shakeで切り替え)
 bbtnFlag = True
-
-# music.play(music.POWER_UP)
+# 音を有効(A+Bで切り替え)
+sndFlag = True
 
 def BtnKeyChg():
     global bbtnFlag
@@ -34,6 +36,19 @@ def BtnKeyChg():
     else:
         bbtnFlag = True
         display.show('B')
+        sleep(500)
+        display.clear()
+
+def SoundOnOff():
+    global sndFlag
+    if sndFlag:
+        sndFlag = False
+        display.show(Image.ASLEEP)
+        sleep(500)
+        display.clear()
+    else:
+        sndFlag = True
+        display.show(Image.MUSIC_QUAVER)
         sleep(500)
         display.clear()
 
@@ -91,7 +106,8 @@ while True:
         if button_b.is_pressed() and not TxFlag:  # 立ち上がり
             TxFlag = True
             radio.send('key_down')
-            music.pitch(698, -1, pin0, False)
+            if sndFlag:
+                music.pitch(698, -1, pin0, False)
             display.set_pixel(2, 2, 9)
 
         elif not button_b.is_pressed() and TxFlag:  # 立ち下がり
@@ -102,14 +118,18 @@ while True:
 
         elif not button_b.is_pressed() and not TxFlag and not RxFlag:  # 離したまま受信なし
             music.stop()
+            display.set_pixel(0, 2, 0)
         elif not button_b.is_pressed() and not TxFlag and RxFlag:  # 離したまま受信あり
-            music.pitch(880, -1, pin0, False)
+            display.set_pixel(0, 2, 9)
+            if sndFlag:
+                music.pitch(880, -1, pin0, False)
 
     else:
         if pin1.read_digital() and not TxFlag:  # 立ち上がり
             TxFlag = True
             radio.send('key_down')
-            music.pitch(698, -1, pin0, False)
+            if sndFlag:
+                music.pitch(698, -1, pin0, False)
             display.set_pixel(2, 2, 9)
 
         elif not pin1.read_digital() and TxFlag:  # 立ち下がり
@@ -120,14 +140,19 @@ while True:
 
         elif not pin1.read_digital() and not TxFlag and not RxFlag:  # 離したまま受信なし
             music.stop()
+            display.set_pixel(0, 2, 0)
         elif not pin1.read_digital() and not TxFlag and RxFlag:  # 離したまま受信あり
-            music.pitch(880, -1, pin0, False)
+            display.set_pixel(0, 2, 9)
+            if sndFlag:
+                music.pitch(880, -1, pin0, False)
 
-    if button_a.is_pressed():
-        QRO()
+    if button_a.is_pressed():  # A button Sound ON/OFF
+        SoundOnOff()
 
     if accelerometer.was_gesture("shake"):
         BtnKeyChg()
 
-    sleep(10)
-    
+    if button_a.is_pressed() and button_b.is_pressed():  # A+B button QRO
+        QRO()
+
+    sleep(5)
